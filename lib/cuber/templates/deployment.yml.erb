@@ -204,6 +204,17 @@ spec:
           timeoutSeconds: 5
           successThreshold: 1
           failureThreshold: 3
+        <%- else -%>
+        readinessProbe:
+          exec:
+            command: ["true"]
+          initialDelaySeconds: 1
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: ["true"]
+          initialDelaySeconds: 5
+          periodSeconds: 30
         <%- end -%>
       <%- if @options[:migrate] && @options[:migrate][:check] -%>
       initContainers:
