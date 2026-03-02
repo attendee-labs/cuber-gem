@@ -109,11 +109,27 @@ spec:
         <%- else -%>
         command: <%= @options[:migrate][:cmd].shellsplit %>
         <%- end -%>
+        resources:
+          requests:
+            cpu: 1
+            memory: 1Gi
+          limits:
+            memory: 1Gi
         envFrom:
         - configMapRef:
             name: env
         - secretRef:
             name: app-secrets
+        readinessProbe:
+          exec:
+            command: ["true"]
+          initialDelaySeconds: 1
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: ["true"]
+          initialDelaySeconds: 5
+          periodSeconds: 30
       imagePullSecrets:
       - name: regcred
       restartPolicy: Never
@@ -151,6 +167,15 @@ spec:
         app.kubernetes.io/managed-by: cuber
         app: <%= procname %>-proc
     spec:
+      <%- replicas = proc[:scale].is_a?(Range) ? proc[:scale].min : proc[:scale]; if replicas >= 2 -%>
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: <%= procname %>-proc
+      <%- end -%>
       containers:
       - name: <%= procname %>-proc
         image: <%= @options[:image] %>:<%= @options[:release] %>
@@ -204,6 +229,22 @@ spec:
           timeoutSeconds: 5
           successThreshold: 1
           failureThreshold: 3
+        livenessProbe:
+          exec:
+            command: ["true"]
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        <%- else -%>
+        readinessProbe:
+          exec:
+            command: ["true"]
+          initialDelaySeconds: 1
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command: ["true"]
+          initialDelaySeconds: 5
+          periodSeconds: 30
         <%- end -%>
       <%- if @options[:migrate] && @options[:migrate][:check] -%>
       initContainers:
@@ -299,11 +340,27 @@ spec:
             <%- else -%>
             command: <%= cron[:cmd].shellsplit %>
             <%- end -%>
+            resources:
+              requests:
+                cpu: 1
+                memory: 1Gi
+              limits:
+                memory: 1Gi
             envFrom:
             - configMapRef:
                 name: env
             - secretRef:
                 name: app-secrets
+            readinessProbe:
+              exec:
+                command: ["true"]
+              initialDelaySeconds: 1
+              periodSeconds: 10
+            livenessProbe:
+              exec:
+                command: ["true"]
+              initialDelaySeconds: 5
+              periodSeconds: 30
           imagePullSecrets:
           - name: regcred
           restartPolicy: Never
