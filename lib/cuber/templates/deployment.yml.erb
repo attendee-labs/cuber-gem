@@ -230,10 +230,18 @@ spec:
           successThreshold: 1
           failureThreshold: 3
         livenessProbe:
-          exec:
-            command: ["true"]
-          initialDelaySeconds: 5
+          httpGet:
+            port: 8080
+            path: <%= URI.parse(@options[:health]).path.to_json %>
+            httpHeaders:
+              - name: Host
+                value: <%= URI.parse(@options[:health]).host.to_json %>
+              - name: X-Forwarded-Proto
+                value: <%= URI.parse(@options[:health]).scheme.to_json %>
+          initialDelaySeconds: 60
           periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
         <%- else -%>
         readinessProbe:
           exec:
